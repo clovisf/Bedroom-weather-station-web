@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>FritzenLab Weather Station</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+    font-family:Arial,sans-serif;
+    margin:0;
+    background:#f4f4f4;
+}
+
+header{
+    background:#222;
+    color:white;
+    padding:15px;
+    text-align:center;
+}
+
+.container{
+    width:95%;
+    max-width:1400px;
+    margin:auto;
+}
+
+.station{
+    margin-top:30px;
+}
+
+.station-title{
+    background:#333;
+    color:white;
+    padding:12px 15px;
+    border-radius:10px 10px 0 0;
+    margin:0;
+}
+
+.cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:15px;
+    margin:20px 0;
+}
+
+.card{
+    background:white;
+    border-radius:10px;
+    padding:20px;
+    text-align:center;
+    box-shadow:0 2px 5px rgba(0,0,0,.15);
+}
+
+.card h2{
+    margin:0;
+    font-size:1rem;
+}
+
+.card .value{
+    font-size:2rem;
+    margin-top:10px;
+    font-weight:bold;
+}
+
+.chart-container{
+    background:white;
+    margin-bottom:25px;
+    padding:15px;
+    border-radius:10px;
+    box-shadow:0 2px 5px rgba(0,0,0,.15);
+}
+
+canvas{
+    max-height:350px;
+}
+
+.footer{
+    text-align:center;
+    margin:30px 20px;
+    color:#666;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<header>
+
+<h1>FritzenLab Weather Station</h1>
+
+<div id="lastUpdate">Loading...</div>
+
+</header>
+
+
+<div class="container">
+
+
+<!-- ========================================================= -->
+<!-- WEATHER STATION                                           -->
+<!-- ========================================================= -->
+
+<div class="station">
+
+<h2 class="station-title">Weather Station</h2>
+
+
+<div class="cards">
+
+
+<div class="card">
+
+<h2>Temperature</h2>
+
+<div id="tempNow" class="value">--</div>
+
+</div>
+
+
+<div class="card">
+
+<h2>Humidity</h2>
+
+<div id="humNow" class="value">--</div>
+
+</div>
+
+
+<div class="card">
+
+<h2>Pressure</h2>
+
+<div id="pressureNow" class="value">--</div>
+
+</div>
+
+
+<div class="card">
+
+<h2>Light (Lux)</h2>
+
+<div id="bh1750Now" class="value">--</div>
+
+</div>
+
+<div class="card">
+
+<h2>SGP40 TVOC</h2>
+
+<div id="sgp40Now" class="value">--</div>
+
+</div>
+
+<div class="card">
+
+<h2>Air quality score AQI</h2>
+
+<div id="aqiNow" class="value">--</div>
+
+</div>
+
+
+</div>
+
+
+<div class="chart-container">
+
+<h2>Temperature (24 Hours)</h2>
+
+<canvas id="tempChart"></canvas>
+
+</div>
+
+
+<div class="chart-container">
+
+<h2>Humidity (24 Hours)</h2>
+
+<canvas id="humChart"></canvas>
+
+</div>
+
+
+<div class="chart-container">
+
+<h2>Pressure (24 Hours)</h2>
+
+<canvas id="pressureChart"></canvas>
+
+</div>
+
+
+<div class="chart-container">
+
+<h2>Light level (Lux) (24 Hours)</h2>
+
+<canvas id="bh1750Chart"></canvas>
+
+</div>
+
+<div class="chart-container">
+
+<h2>SGP40 TVOC (24 Hours)</h2>
+
+<canvas id="sgp40Chart"></canvas>
+
+</div>
+
+<div class="chart-container">
+
+<h2>Air quality score AQI (24 Hours)</h2>
+
+<canvas id="aqiChart"></canvas>
+
+</div>
+
+</div>
+
+
+</div>
+
+
+<div class="footer">
+
+FritzenLab Weather Station
+
+</div>
+
+
+
+<script type="module">
+
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+
+import {
+
+getDatabase,
+ref,
+get,
+query,
+orderByKey,
+startAt
+
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+
+
+/* ========================================================= */
+/* FIREBASE CONFIGURATION                                    */
+/* ========================================================= */
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA-GMM3xp-KPal5gY3XQOlbpi9GcvqNFLg",
+  authDomain: "fritzenlabweatherstation.firebaseapp.com",
+  databaseURL: "https://fritzenlabweatherstation-default-rtdb.firebaseio.com",
+  projectId: "fritzenlabweatherstation",
+  storageBucket: "fritzenlabweatherstation.firebasestorage.app",
+  messagingSenderId: "136660458424",
+  appId: "1:136660458424:web:ec8243e5f41843607e4d4d",
+  measurementId: "G-XQHE306L0T"
+};
+
+const app = initializeApp(firebaseConfig);
+
+const db = getDatabase(app);
+
+
+
+/* ========================================================= */
+/* CHART VARIABLES                                           */
+/* ========================================================= */
+
+let tempChart;
+
+let humChart;
+
+let pressureChart;
+
+let bh1750Chart;
+
+let aqiChart;
+
+let sgp40Chart;
+
+
+
+/* ========================================================= */
+/* CREATE CHART                                               */
+/* ========================================================= */
+
+function createChart(canvasId,label,data,labels)
+
+{
+
+const ctx = document.getElementById(canvasId);
+
+
+return new Chart(ctx,{
+
+type:'line',
+
+
+data:{
+
+labels:labels,
+
+
+datasets:[{
+
+label:label,
+
+data:data,
+
+tension:0.25,
+
+fill:false
+
+}]
+
+},
+
+
+options:{
+
+responsive:true,
+
+maintainAspectRatio:false,
+
+
+scales:{
+
+x:{
+
+ticks:{
+
+maxTicksLimit:10
+
+}
+
+}
+
+}
+
+}
+
+});
+
+}
+
+
+
+/* ========================================================= */
+/* LOAD WEATHER DATA                                         */
+/* Firebase path: /weather                                   */
+/* ========================================================= */
+
+async function loadWeather()
+
+{
+
+try{
+
+
+/* Current Unix timestamp */
+
+const now = Math.floor(Date.now() / 1000);
+
+
+/* Get enough data to cover the requested 24-hour period */
+
+const cutoff48h = now - (48 * 60 * 60);
+
+
+const weatherQuery = query(
+
+ref(db,'weather'),
+
+orderByKey(),
+
+startAt(String(cutoff48h))
+
+);
+
+
+const snapshot = await get(weatherQuery);
+
+
+if(!snapshot.exists())
+
+{
+
+console.log("No weather data found.");
+
+return;
+
+}
+
+
+const data = snapshot.val();
+
+
+/* Only use the last 24 hours for the charts */
+
+const cutoff = now - (24 * 60 * 60);
+
+
+let rows = [];
+
+
+Object.keys(data).forEach(key => {
+
+
+const item = data[key];
+
+
+if(item && item.timestamp >= cutoff)
+
+{
+
+rows.push(item);
+
+}
+
+
+});
+
+
+/* Sort oldest → newest */
+
+rows.sort((a,b) => a.timestamp - b.timestamp);
+
+
+if(rows.length === 0)
+
+{
+
+console.log("No data from the last 24 hours.");
+
+return;
+
+}
+
+
+/* ========================================================= */
+/* LATEST READING                                            */
+/* ========================================================= */
+
+const latest = rows[rows.length - 1];
+
+
+console.log(
+
+"Weather station updated:",
+
+new Date(latest.timestamp * 1000).toLocaleString()
+
+);
+
+
+
+/* ========================================================= */
+/* CURRENT VALUES                                            */
+/* ========================================================= */
+
+document.getElementById("tempNow").innerHTML =
+
+Number(latest.temp).toFixed(1) + " °C";
+
+
+document.getElementById("humNow").innerHTML =
+
+Number(latest.hum).toFixed(1) + " %";
+
+
+document.getElementById("pressureNow").innerHTML =
+
+Number(latest.pressure).toFixed(1) + " hPa";
+
+
+document.getElementById("bh1750Now").innerHTML =
+
+Number(latest.bh1750).toFixed(1) + " Lux";
+
+
+document.getElementById("aqiNow").innerHTML =
+
+Number(latest.aqi).toFixed(0);
+
+
+document.getElementById("sgp40Now").innerHTML =
+
+Number(latest["tvoc sgp40"]).toFixed(0) + " ppb";
+
+
+
+/* ========================================================= */
+/* LAST UPDATE                                               */
+/* ========================================================= */
+
+document.getElementById("lastUpdate").innerHTML =
+
+"Last update: " +
+
+new Date(latest.timestamp * 1000).toLocaleString();
+
+
+
+/* ========================================================= */
+/* CHART DATA                                                */
+/* ========================================================= */
+
+const labels = [];
+
+const tempData = [];
+
+const humData = [];
+
+const pressureData = [];
+
+const bh1750Data = [];
+
+const aqiData = [];
+
+const sgp40Data = [];
+
+
+
+rows.forEach(r => {
+
+
+labels.push(
+
+new Date(r.timestamp * 1000)
+
+.toLocaleTimeString([],{
+
+hour:'2-digit',
+
+minute:'2-digit'
+
+})
+
+);
+
+
+tempData.push(Number(r.temp));
+
+humData.push(Number(r.hum));
+
+pressureData.push(Number(r.pressure));
+
+bh1750Data.push(Number(r.bh1750));
+
+aqiData.push(Number(r.aqi));
+
+sgp40Data.push(Number(r["tvoc sgp40"]));
+
+
+});
+
+
+
+/* ========================================================= */
+/* DESTROY OLD CHARTS                                        */
+
+if(tempChart)
+
+tempChart.destroy();
+
+
+if(humChart)
+
+humChart.destroy();
+
+
+if(pressureChart)
+
+pressureChart.destroy();
+
+
+if(bh1750Chart)
+
+bh1750Chart.destroy();
+
+
+if(aqiChart)
+
+aqiChart.destroy();
+
+
+if(sgp40Chart)
+
+sgp40Chart.destroy();
+
+
+
+/* ========================================================= */
+/* CREATE CHARTS                                             */
+/* ========================================================= */
+
+tempChart =
+
+createChart(
+
+"tempChart",
+
+"Temperature °C",
+
+tempData,
+
+labels
+
+);
+
+
+
+humChart =
+
+createChart(
+
+"humChart",
+
+"Humidity %",
+
+humData,
+
+labels
+
+);
+
+
+
+pressureChart =
+
+createChart(
+
+"pressureChart",
+
+"Pressure hPa",
+
+pressureData,
+
+labels
+
+);
+
+
+
+bh1750Chart =
+
+createChart(
+
+"bh1750Chart",
+
+"BH1750 LUX",
+
+bh1750Data,
+
+labels
+
+);
+
+
+
+sgp40Chart =
+
+createChart(
+
+"sgp40Chart",
+
+"SGP40 TVOC ppb",
+
+sgp40Data,
+
+labels
+
+);
+
+aqiChart =
+
+createChart(
+
+"aqiChart",
+
+"Air quality score AQI",
+
+aqiData,
+
+labels
+
+);
+
+}
+
+catch(err)
+
+{
+
+console.error(
+
+"Weather station error:",
+
+err
+
+);
+
+}
+
+}
+
+
+
+/* ========================================================= */
+/* INITIAL LOAD                                              */
+/* ========================================================= */
+
+loadWeather();
+
+
+
+/* ========================================================= */
+/* UPDATE EVERY 5 MINUTES                                    */
+/* ========================================================= */
+
+setInterval(() => {
+
+
+console.log(
+
+"Automatic update:",
+
+new Date().toLocaleString()
+
+);
+
+
+loadWeather();
+
+
+},300000);
+
+
+
+</script>
+
+
+</body>
+
+</html>
