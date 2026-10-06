@@ -138,39 +138,15 @@ canvas{
 
 </div>
 
-
 <div class="card">
 
-<h2>Pressure</h2>
+<h2>TVOC</h2>
 
-<div id="pressureNow" class="value">--</div>
+<div id="tvocNow" class="value">--</div>
 
 </div>
 
 
-<div class="card">
-
-<h2>Light (Lux)</h2>
-
-<div id="bh1750Now" class="value">--</div>
-
-</div>
-
-<div class="card">
-
-<h2>SGP40 TVOC</h2>
-
-<div id="sgp40Now" class="value">--</div>
-
-</div>
-
-<div class="card">
-
-<h2>Air quality score AQI</h2>
-
-<div id="aqiNow" class="value">--</div>
-
-</div>
 
 
 </div>
@@ -196,36 +172,13 @@ canvas{
 
 <div class="chart-container">
 
-<h2>Pressure (24 Hours)</h2>
+<h2>TVOC (24 Hours)</h2>
 
-<canvas id="pressureChart"></canvas>
-
-</div>
-
-
-<div class="chart-container">
-
-<h2>Light level (Lux) (24 Hours)</h2>
-
-<canvas id="bh1750Chart"></canvas>
+<canvas id="tvocChart"></canvas>
 
 </div>
 
-<div class="chart-container">
 
-<h2>SGP40 TVOC (24 Hours)</h2>
-
-<canvas id="sgp40Chart"></canvas>
-
-</div>
-
-<div class="chart-container">
-
-<h2>Air quality score AQI (24 Hours)</h2>
-
-<canvas id="aqiChart"></canvas>
-
-</div>
 
 </div>
 
@@ -289,13 +242,8 @@ let tempChart;
 
 let humChart;
 
-let pressureChart;
+let tvocChart;
 
-let bh1750Chart;
-
-let aqiChart;
-
-let sgp40Chart;
 
 
 
@@ -465,7 +413,7 @@ const latest = rows[rows.length - 1];
 
 console.log(
 
-"Weather station updated:",
+"Bedroom station updated:",
 
 new Date(latest.timestamp * 1000).toLocaleString()
 
@@ -486,25 +434,9 @@ document.getElementById("humNow").innerHTML =
 
 Number(latest.hum).toFixed(1) + " %";
 
+document.getElementById("tvocNow").innerHTML =
 
-document.getElementById("pressureNow").innerHTML =
-
-Number(latest.pressure).toFixed(1) + " hPa";
-
-
-document.getElementById("bh1750Now").innerHTML =
-
-Number(latest.bh1750).toFixed(1) + " Lux";
-
-
-document.getElementById("aqiNow").innerHTML =
-
-Number(latest.aqi).toFixed(0);
-
-
-document.getElementById("sgp40Now").innerHTML =
-
-Number(latest["tvoc sgp40"]).toFixed(0) + " ppb";
+Number(latest.tvoc).toFixed(0) + " ppb";
 
 
 
@@ -530,13 +462,9 @@ const tempData = [];
 
 const humData = [];
 
-const pressureData = [];
+const tvocData = [];
 
-const bh1750Data = [];
 
-const aqiData = [];
-
-const sgp40Data = [];
 
 
 
@@ -562,13 +490,7 @@ tempData.push(Number(r.temp));
 
 humData.push(Number(r.hum));
 
-pressureData.push(Number(r.pressure));
-
-bh1750Data.push(Number(r.bh1750));
-
-aqiData.push(Number(r.aqi));
-
-sgp40Data.push(Number(r["tvoc sgp40"]));
+tvocData.push(Number(r.tvoc));
 
 
 });
@@ -588,24 +510,10 @@ if(humChart)
 humChart.destroy();
 
 
-if(pressureChart)
+if(tvocChart)
 
-pressureChart.destroy();
+tvocChart.destroy();
 
-
-if(bh1750Chart)
-
-bh1750Chart.destroy();
-
-
-if(aqiChart)
-
-aqiChart.destroy();
-
-
-if(sgp40Chart)
-
-sgp40Chart.destroy();
 
 
 
@@ -645,61 +553,15 @@ labels
 
 
 
-pressureChart =
+tvocChart =
 
 createChart(
 
-"pressureChart",
+"tvocChart",
 
-"Pressure hPa",
+"TVOC ppb",
 
-pressureData,
-
-labels
-
-);
-
-
-
-bh1750Chart =
-
-createChart(
-
-"bh1750Chart",
-
-"BH1750 LUX",
-
-bh1750Data,
-
-labels
-
-);
-
-
-
-sgp40Chart =
-
-createChart(
-
-"sgp40Chart",
-
-"SGP40 TVOC ppb",
-
-sgp40Data,
-
-labels
-
-);
-
-aqiChart =
-
-createChart(
-
-"aqiChart",
-
-"Air quality score AQI",
-
-aqiData,
+tvocData,
 
 labels
 
@@ -713,7 +575,7 @@ catch(err)
 
 console.error(
 
-"Weather station error:",
+"Bedroom station error:",
 
 err
 
