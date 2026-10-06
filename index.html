@@ -8,7 +8,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>FritzenLab Weather Station</title>
+<title>Bedroom environment</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -99,7 +99,7 @@ canvas{
 
 <header>
 
-<h1>FritzenLab Weather Station</h1>
+<h1>Bedroom environment</h1>
 
 <div id="lastUpdate">Loading...</div>
 
@@ -110,12 +110,12 @@ canvas{
 
 
 <!-- ========================================================= -->
-<!-- WEATHER STATION                                           -->
+<!-- Bedroom environment                                       -->
 <!-- ========================================================= -->
 
 <div class="station">
 
-<h2 class="station-title">Weather Station</h2>
+<h2 class="station-title">Bedroom environment</h2>
 
 
 <div class="cards">
@@ -235,7 +235,7 @@ canvas{
 
 <div class="footer">
 
-FritzenLab Weather Station
+Bedroom environment
 
 </div>
 
@@ -271,8 +271,8 @@ const firebaseConfig = {
   projectId: "fritzenlabweatherstation",
   storageBucket: "fritzenlabweatherstation.firebasestorage.app",
   messagingSenderId: "136660458424",
-  appId: "1:136660458424:web:ec8243e5f41843607e4d4d",
-  measurementId: "G-XQHE306L0T"
+  appId: "1:136660458424:web:a8c73b9b3a3a8f007e4d4d",
+  measurementId: "G-Y534B8KLSQ"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -388,7 +388,7 @@ const cutoff48h = now - (48 * 60 * 60);
 
 const weatherQuery = query(
 
-ref(db,'weather'),
+ref(db,'bedroom'),
 
 orderByKey(),
 
